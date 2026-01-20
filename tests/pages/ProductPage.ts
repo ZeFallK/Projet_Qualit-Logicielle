@@ -1,70 +1,48 @@
 import { Page, Locator, expect } from '@playwright/test';
 
-export class ProductPage {
+export class ProductsPage {
     readonly page: Page;
-    readonly resultatRecherche: Locator;
-    readonly boutonAjoutPanier: Locator;
+    readonly searchInput: Locator;
+    readonly searchButton: Locator;
+    readonly boutonAjoutPanier: Locator; // On garde un seul locator simple
     readonly modaleConfirmation: Locator;
-    
-    // Sélecteur pour les tailles disponibles (on exclut les "greyOut" ou "disable")
-    readonly taillesDisponibles: Locator;
 
     constructor(page: Page) {
         this.page = page;
+        this.searchInput = page.locator('#search_product');
+        this.searchButton = page.locator('#submit_search');
         
-        // Cible le premier produit dans la grille de résultats (image ou lien)
-        // On utilise un sélecteur large pour attraper le premier article cliquable
-        this.resultatRecherche = page.locator('#navlist > li a, .s-result-item a').first(); 
+        // --- CORRECTION MAJEURE ICI ---
+        // Au lieu de chercher l'overlay compliqué, on prend le bouton "Add to cart"
+        // qui se trouve dans la div "productinfo". Il est visible sans survol.
+        // On prend le .first() pour être sûr de cliquer sur le premier produit de la liste.
+        this.boutonAjoutPanier = page.locator('.productinfo > a.add-to-cart').first();
         
-        // Sélecteur intelligent pour les tailles :
-        // On cherche dans la liste des tailles (.sizeButtons) un élément qui N'EST PAS grisé (:not(.greyOut))
-        this.taillesDisponibles = page.locator('.sizeButtons li:not(.greyOut):not(.disabled)');
-        
-        // Bouton Ajouter au panier
-        this.boutonAjoutPanier = page.locator('#aAddToBag, #addToBag');
-        
-        // Modale de confirmation (pop-up ou message glissant)
-        this.modaleConfirmation = page.locator('#divCartConfirm, .modal-confirmation, #cart-confirmation');
+        this.modaleConfirmation = page.locator('#cartModal');
     }
 
-    async cliquerPremierResultat() {
-        console.log("Recherche du premier produit...");
-        // On attend que la liste s'affiche
-        await this.resultatRecherche.waitFor({ state: 'visible', timeout: 15000 });
+    async rechercherProduit(nom: string) {
+        await this.searchInput.fill(nom);
+        await this.searchButton.click();
         
-        // On clique
-        await this.resultatRecherche.click();
-        console.log("Clic effectué sur le produit.");
+        // Vérification avec ignoreCase pour éviter les erreurs de majuscules
+        await expect(this.page.locator('.features_items .title')).toContainText('SEARCHED PRODUCTS', { ignoreCase: true });
     }
 
-    async ajouterAuPanier() {
-        console.log("Tentative de sélection de taille...");
-        
-        // 1. Attendre que le conteneur des tailles soit chargé
-        await this.page.waitForSelector('.sizeButtons', { timeout: 10000 });
+    async ajouterPremierProduit() {
+        // 1. On s'assure que le bouton est bien visible à l'écran (scroll automatique)
+        await this.boutonAjoutPanier.scrollIntoViewIfNeeded();
 
-        // 2. Vérifier s'il y a des tailles disponibles
-        const nombreTailles = await this.taillesDisponibles.count();
-        
-        if (nombreTailles > 0) {
-            // 3. On prend la première taille disponible (souvent la plus petite en stock)
-            // On force le clic car parfois des tooltips gênent
-            await this.taillesDisponibles.first().click({ force: true });
-            console.log("Taille sélectionnée.");
-            
-            // Petite pause pour laisser le site digérer le clic (animation visuelle de sélection)
-            await this.page.waitForTimeout(500);
-        } else {
-            console.log("ATTENTION : Aucune taille détectée ou produit taille unique.");
-        }
+        // 2. On attend explicitement qu'il soit cliquable
+        await this.boutonAjoutPanier.waitFor({ state: 'visible' });
 
-        // 4. On clique sur Ajouter au panier
-        await this.boutonAjoutPanier.click();
-        console.log("Clic sur Ajouter au panier effectué.");
+        // 3. On clique. On garde "force: true" car parfois une pub ou un pixel dépasse.
+        await this.boutonAjoutPanier.click({ force: true });
     }
 
-    async verifierModaleConfirmation() {
-        console.log("Attente de la confirmation...");
+    async verifierModaleSucces() {
+        // On attend que la modale sorte de son état "hidden"
         await expect(this.modaleConfirmation).toBeVisible({ timeout: 10000 });
+        await expect(this.modaleConfirmation).toContainText('Added!');
     }
 }

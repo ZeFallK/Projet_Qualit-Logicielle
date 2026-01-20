@@ -1,12 +1,10 @@
-Feature: Tunnel d'achat sur Intersport
+Feature: Parcours d'achat sur Automation Exercise
 
-  Scenario: Recherche d'un produit et ajout au panier
-    Given je suis sur la page d'accueil Intersport et j'accepte les cookies
-    When je recherche le produit "Chaussures running"
-    And je clique sur le premier produit de la liste
-    And j'ajoute le produit au panier
-    Then la modale de confirmation d'ajout au panier doit être visible
-
+  Scenario: Recherche et ajout d'un produit au panier
+    Given je suis sur la page d'accueil et je navigue vers "Products"
+    When je recherche le produit "Blue Top"
+    And j'ajoute le premier produit visible au panier
+    Then je dois voir la modale de confirmation "Added!"
 # Feature: Gérer des tâches dans TodoMVC
 
 #   # Ce fichier décrit le comportement attendu de l'application sous forme de scénario lisible par tous.
