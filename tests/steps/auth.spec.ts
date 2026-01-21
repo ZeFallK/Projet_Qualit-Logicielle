@@ -54,8 +54,6 @@ When('je saisis mes identifiants valides {string} et {string}', async function (
     await loginPage.remplirFormulaire(email, mdp);
 });
 
-// --- THEN : RÉSULTATS ---
-
 Then('je dois voir un message d\'erreur d\'authentification', async function () {
     await loginPage.verifierMessageErreur();
 });
@@ -64,7 +62,6 @@ Then('je dois être redirigé vers mon tableau de bord client', async function (
     await loginPage.verifierConnexionReussie();
 });
 
-// --- NETTOYAGE ---
 AfterAll(async function () {
     if (browser) await browser.close();
 });

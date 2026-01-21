@@ -1,6 +1,5 @@
 @achatparfum
 Feature: Achat sur Parfums Collection Privée
-
   Scenario: Recherche d'un parfum et ajout au panier
     Given je suis sur le site Parfums Collection Privée
     When je recherche le parfum "Bois"

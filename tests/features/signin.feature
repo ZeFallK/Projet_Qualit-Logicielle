@@ -1,6 +1,5 @@
 @valid_login
 Feature: Connexion Client Réussie
-
 Scenario: Connexion avec un compte existant valide
     Given je démarre le test de connexion valide
     When je navigue vers la page de connexion   

@@ -29,7 +29,6 @@ When('je survole le menu {string}', async function (menu: string) {
 // --- CORRECTION DES NOMS ICI ---
 
 When('je clique sur le lien {string}', async function (categorie: string) {
-    // On utilise les termes exacts du fichier .feature (Singulier et "Unisexe")
     if (categorie === 'Homme') {
         await homePage.cliquerSurHomme();
     } else if (categorie === 'Femme') {

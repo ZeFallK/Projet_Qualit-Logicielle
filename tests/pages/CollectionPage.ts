@@ -12,12 +12,10 @@ export class CollectionPage {
     }
 
     async verifierTitre(titreAttendu: string) {
-        // On vérifie que le H1 contient le mot (ex: "Hommes")
         await expect(this.titrePage).toContainText(titreAttendu, { ignoreCase: true });
     }
 
     async verifierProduitsPresents() {
-        // On vérifie qu'il y a au moins 1 produit
         await expect(this.listeProduits.first()).toBeVisible();
     }
 }
