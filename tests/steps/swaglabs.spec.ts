@@ -1,50 +1,57 @@
 import { Given, When, Then, AfterAll, setDefaultTimeout } from '@cucumber/cucumber';
-import { chromium, Page, Browser } from '@playwright/test';
+import { chromium, Page, Browser, BrowserContext } from '@playwright/test';
 import { HomePage } from '../pages/HomePage';
-// Attention: vérifie si ton fichier s'appelle ProductPage.ts ou ProductsPage.ts dans ton dossier
-import { ProductsPage } from '../pages/ProductPage'; 
+import { ProductPage } from '../pages/ProductPage';
 
-setDefaultTimeout(30 * 1000);
+// On laisse 60 secondes par étape car les sites réels peuvent être lents à charger
+setDefaultTimeout(60 * 1000);
 
 let browser: Browser;
+let context: BrowserContext;
 let page: Page;
 let homePage: HomePage;
-let productsPage: ProductsPage;
+let productPage: ProductPage;
 
 // --- GIVEN ---
 
-Given('je suis sur la page d\'accueil et je navigue vers {string}', async function (menu: string) {
+Given('je suis sur le site Parfums Collection Privée', async function () {
     browser = await chromium.launch({ headless: false });
-    page = await browser.newPage();
+    
+    // On se fait passer pour un vrai utilisateur Chrome Windows
+    context = await browser.newContext({
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    });
+
+    page = await context.newPage();
     
     homePage = new HomePage(page);
-    productsPage = new ProductsPage(page);
+    productPage = new ProductPage(page);
 
     await homePage.naviguer();
-    if (menu === "Products") {
-        await homePage.allerSurPageProduits();
-    }
 });
 
 // --- WHEN ---
 
-When('je recherche le produit {string}', async function (produit: string) {
-    await productsPage.rechercherProduit(produit);
+When('je recherche le parfum {string}', async function (nomParfum: string) {
+    await homePage.rechercher(nomParfum);
 });
 
-// CORRECTION ICI : Remplacement de "trouvé" par "visible" pour matcher le fichier .feature
-When('j\'ajoute le premier produit visible au panier', async function () {
-    await productsPage.ajouterPremierProduit();
+When('je clique sur le premier produit des résultats', async function () {
+    await homePage.cliquerPremierResultat();
+});
+
+When('j\'ajoute le produit au panier', async function () {
+    await productPage.ajouterAuPanier();
 });
 
 // --- THEN ---
 
-Then('je dois voir la modale de confirmation {string}', async function (message: string) {
-    await productsPage.verifierModaleSucces();
+Then('le panier doit s\'ouvrir avec le produit ajouté', async function () {
+    await productPage.verifierPanier();
 });
 
+// --- NETTOYAGE ---
+
 AfterAll(async function () {
-    if (browser) {
-        await browser.close();
-    }
+    if (browser) await browser.close();
 });

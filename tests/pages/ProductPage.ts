@@ -1,48 +1,42 @@
 import { Page, Locator, expect } from '@playwright/test';
 
-export class ProductsPage {
+export class ProductPage {
     readonly page: Page;
-    readonly searchInput: Locator;
-    readonly searchButton: Locator;
-    readonly boutonAjoutPanier: Locator; // On garde un seul locator simple
-    readonly modaleConfirmation: Locator;
+    readonly boutonAjout: Locator;
+    readonly titrePanier: Locator;
 
     constructor(page: Page) {
         this.page = page;
-        this.searchInput = page.locator('#search_product');
-        this.searchButton = page.locator('#submit_search');
+        // Bouton d'ajout : souvent name="add" ou type="submit" dans un form produit
+        this.boutonAjout = page.locator('button[name="add"], form[action*="/cart/add"] button[type="submit"]');
         
-        // --- CORRECTION MAJEURE ICI ---
-        // Au lieu de chercher l'overlay compliqué, on prend le bouton "Add to cart"
-        // qui se trouve dans la div "productinfo". Il est visible sans survol.
-        // On prend le .first() pour être sûr de cliquer sur le premier produit de la liste.
-        this.boutonAjoutPanier = page.locator('.productinfo > a.add-to-cart').first();
-        
-        this.modaleConfirmation = page.locator('#cartModal');
+        // Le titre dans le panier (drawer ou page)
+        this.titrePanier = page.locator('.cart-drawer__title, h1:has-text("Panier"), .cart-notification');
     }
 
-    async rechercherProduit(nom: string) {
-        await this.searchInput.fill(nom);
-        await this.searchButton.click();
-        
-        // Vérification avec ignoreCase pour éviter les erreurs de majuscules
-        await expect(this.page.locator('.features_items .title')).toContainText('SEARCHED PRODUCTS', { ignoreCase: true });
+    async ajouterAuPanier() {
+        await this.page.waitForLoadState('domcontentloaded');
+        // Parfois il faut scroller pour voir le bouton
+        await this.boutonAjout.first().scrollIntoViewIfNeeded();        
+        // force: true au cas où une petite animation gêne)
+        await this.boutonAjout.first().click({ force: true });
     }
 
-    async ajouterPremierProduit() {
-        // 1. On s'assure que le bouton est bien visible à l'écran (scroll automatique)
-        await this.boutonAjoutPanier.scrollIntoViewIfNeeded();
+    async verifierPanier() {
+        console.log("Vérification de l'ouverture du panier...");
 
-        // 2. On attend explicitement qu'il soit cliquable
-        await this.boutonAjoutPanier.waitFor({ state: 'visible' });
+        // 1. On laisse le temps au tiroir latéral de s'ouvrir (animation)
+        await this.page.waitForTimeout(1000);
 
-        // 3. On clique. On garde "force: true" car parfois une pub ou un pixel dépasse.
-        await this.boutonAjoutPanier.click({ force: true });
-    }
+        // 2. On cible le bouton de validation ("Checkout")
+        // Sur Shopify, ce bouton a presque toujours le name="checkout" ou s'appelle "Procéder au paiement"
+        const boutonCommander = this.page.locator('button[name="checkout"], a[href="/checkout"], button:has-text("Paiement"), button:has-text("Commander")').first();
 
-    async verifierModaleSucces() {
-        // On attend que la modale sorte de son état "hidden"
-        await expect(this.modaleConfirmation).toBeVisible({ timeout: 10000 });
-        await expect(this.modaleConfirmation).toContainText('Added!');
+        // 3. On attend qu'il soit visible.
+        // Si ce bouton est visible, c'est la PREUVE que le panier est ouvert.
+        await expect(boutonCommander).toBeVisible({ timeout: 15000 });
+
+        // OPTIONNEL : Si tu veux que le test clique vraiment dessus pour aller jusqu'au paiement :
+        // await boutonCommander.click();
     }
 }

@@ -3,6 +3,6 @@
     "requireModule": ["ts-node/register"],
     "require": ["tests/steps/**/*.ts"],
     "paths": ["tests/features/**/*.feature"],
-    "format": ["@cucumber/pretty-formatter", "progress"]
+    "format": ["@cucumber/pretty-formatter", "progress","html:rapport-execution.html"]
   }
 }
